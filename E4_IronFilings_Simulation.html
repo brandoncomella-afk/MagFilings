@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iron Filings · E4 Magnetism</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:#e8e0d4;color:#2a1f14;min-height:100vh;}
+
+header{
+  background:#2a1f14;color:#f5ede0;
+  padding:13px 22px;display:flex;align-items:center;gap:13px;
+}
+.badge{
+  background:#c87941;color:white;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:11px;font-weight:700;letter-spacing:2px;padding:3px 9px;
+}
+header h1{font-size:17px;font-weight:600;}
+header .sub{font-size:11px;opacity:.55;margin-top:1px;}
+
+.wrap{max-width:870px;margin:0 auto;padding:14px;}
+
+/* Config nav */
+.cfg-nav{display:grid;grid-template-columns:repeat(6,1fr) auto;gap:5px;margin-bottom:11px;align-items:stretch;}
+.cfg-btn{
+  padding:9px 3px;border:1.5px solid #c4b49e;background:#faf5ee;
+  cursor:pointer;font-family:'Barlow',sans-serif;font-size:10.5px;
+  font-weight:500;color:#5a4030;text-align:center;
+  transition:all .14s;border-radius:3px;line-height:1.35;
+}
+.cfg-btn:hover{border-color:#c87941;background:#fff8f0;color:#c87941;}
+.cfg-btn.active{border-color:#c87941;background:#c87941;color:white;}
+.cfg-btn .num{font-size:14px;font-weight:700;display:block;margin-bottom:2px;}
+
+.clear-btn{
+  padding:9px 14px;border:1.5px solid #c4b49e;background:#faf5ee;
+  cursor:pointer;font-family:'Barlow',sans-serif;font-size:11px;
+  font-weight:600;color:#8a4020;text-align:center;
+  transition:all .14s;border-radius:3px;white-space:nowrap;
+}
+.clear-btn:hover{border-color:#8a4020;background:#fff0e8;color:#6a2a10;}
+.clear-btn:active{background:#8a4020;color:white;}
+
+/* Canvas */
+.cv-wrap{
+  position:relative;border-radius:3px;overflow:hidden;
+  box-shadow:0 2px 12px rgba(80,50,20,0.18), 0 0 0 1.5px #b89a78;
+}
+#cv{
+  display:block;width:100%;cursor:crosshair;
+  background:#faf5ee;
+}
+
+/* Hint overlay */
+.hint{
+  position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  background:rgba(42,31,20,0.72);color:#f5ede0;
+  font-size:12.5px;font-weight:500;
+  padding:6px 16px;border-radius:20px;
+  pointer-events:none;transition:opacity .4s;
+  white-space:nowrap;
+}
+.hint.hidden{opacity:0;}
+
+/* Filing count badge */
+.fcount{
+  position:absolute;top:10px;right:12px;
+  background:rgba(42,31,20,0.55);color:#f5ede0;
+  font-size:10px;font-weight:600;letter-spacing:1px;
+  padding:3px 9px;border-radius:10px;pointer-events:none;
+}
+
+/* Info */
+.info{
+  background:#faf5ee;border:1.5px solid #c4b49e;border-radius:3px;
+  padding:15px 17px;margin-top:9px;display:flex;gap:18px;
+}
+.info-main{flex:1.2;}
+.info-title{font-size:14px;font-weight:700;color:#6a3010;margin-bottom:5px;}
+.info-desc{font-size:12.5px;line-height:1.65;color:#3a2a18;}
+.info-qs{flex:1;border-left:2px solid #ddd0bc;padding-left:15px;}
+.iq-lbl{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#a08060;margin-bottom:7px;}
+.iq-list{list-style:none;display:flex;flex-direction:column;gap:7px;}
+.iq-list li{font-size:12.5px;line-height:1.55;padding-left:14px;position:relative;color:#3a2a18;}
+.iq-list li::before{content:'›';position:absolute;left:0;color:#c87941;font-weight:700;}
+
+.note{font-size:11.5px;color:#8a6040;margin-top:7px;font-style:italic;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="badge">E4</div>
+  <div>
+    <h1>Iron Filings — Explore Magnetic Fields</h1>
+    <div class="sub">Click or drag on the canvas to sprinkle filings · AMTA Modeling Instruction</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="cfg-nav">
+    <button class="cfg-btn active" onclick="go(0)"><span class="num">1</span>Horizontal Bar</button>
+    <button class="cfg-btn"        onclick="go(1)"><span class="num">2</span>Vertical Bar</button>
+    <button class="cfg-btn"        onclick="go(2)"><span class="num">3</span>Horseshoe</button>
+    <button class="cfg-btn"        onclick="go(3)"><span class="num">4</span>Bar at 45°</button>
+    <button class="cfg-btn"        onclick="go(4)"><span class="num">5</span>Attracting</button>
+    <button class="cfg-btn"        onclick="go(5)"><span class="num">6</span>Repelling</button>
+    <button class="clear-btn" onclick="clearFilings()">↺ Clear</button>
+  </div>
+
+  <div class="cv-wrap">
+    <canvas id="cv" width="830" height="510"></canvas>
+    <div class="hint" id="hint">Click or drag to sprinkle iron filings</div>
+    <div class="fcount" id="fcount"></div>
+  </div>
+
+  <div class="info">
+    <div class="info-main">
+      <div class="info-title" id="ititle"></div>
+      <div class="info-desc" id="idesc"></div>
+      <div class="note">⚠︎ Iron filings align <em>along</em> field lines but cannot show direction — they look the same at 0° and 180°. Compare to the field-line simulation to see which way the field actually points.</div>
+    </div>
+    <div class="info-qs">
+      <div class="iq-lbl">Sprinkle &amp; Observe</div>
+      <ul class="iq-list" id="iqs"></ul>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Canvas & coords ──────────────────────────────────────
+const cv   = document.getElementById('cv');
+const ctx  = cv.getContext('2d');
+const CW   = cv.width, CH = cv.height;
+const SC   = 68;
+const OX   = CW/2, OY = CH/2;
+
+const px = x => OX + x*SC;
+const py = y => OY - y*SC;
+const fx = cx => (cx - OX) / SC;   // canvas → physical x
+const fy = cy => (OY - cy) / SC;   // canvas → physical y
+
+// ── Field ────────────────────────────────────────────────
+function B(x, y, poles){
+  let bx=0, by=0;
+  for(const p of poles){
+    const dx=x-p.x, dy=y-p.y;
+    const r3=Math.pow(dx*dx+dy*dy+0.008,1.5);
+    bx+=p.q*dx/r3; by+=p.q*dy/r3;
+  }
+  return [bx,by];
+}
+
+// ── Magnet drawing ───────────────────────────────────────
+const NC='#606060',SC_='#e4e4e4',NT='#ffffff',ST='#333333',BD='#2a2a2a';
+
+function horizMag(ocx,ocy,hw,hh,nLeft){
+  const ex=px(ocx),ey=py(ocy),W2=hw*SC,H2=hh*SC;
+  ctx.fillStyle=nLeft?NC:SC_; ctx.fillRect(ex-W2,ey-H2,W2,H2*2);
+  ctx.fillStyle=nLeft?SC_:NC; ctx.fillRect(ex,ey-H2,W2,H2*2);
+  ctx.strokeStyle=BD; ctx.lineWidth=2.5;
+  ctx.strokeRect(ex-W2,ey-H2,W2*2,H2*2);
+  ctx.beginPath(); ctx.moveTo(ex,ey-H2); ctx.lineTo(ex,ey+H2); ctx.stroke();
+  ctx.font='bold 20px Barlow,sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  const[l,r]=nLeft?['N','S']:['S','N'];
+  ctx.fillStyle=nLeft?NT:ST; ctx.fillText(l,ex-W2/2,ey);
+  ctx.fillStyle=nLeft?ST:NT; ctx.fillText(r,ex+W2/2,ey);
+}
+
+function vertMag(ocx,ocy,hw,hh,nTop){
+  const ex=px(ocx),ey=py(ocy),W2=hw*SC,H2=hh*SC;
+  ctx.fillStyle=nTop?NC:SC_; ctx.fillRect(ex-W2,ey-H2,W2*2,H2);
+  ctx.fillStyle=nTop?SC_:NC; ctx.fillRect(ex-W2,ey,W2*2,H2);
+  ctx.strokeStyle=BD; ctx.lineWidth=2.5;
+  ctx.strokeRect(ex-W2,ey-H2,W2*2,H2*2);
+  ctx.beginPath(); ctx.moveTo(ex-W2,ey); ctx.lineTo(ex+W2,ey); ctx.stroke();
+  ctx.font='bold 20px Barlow,sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  const[t,b]=nTop?['N','S']:['S','N'];
+  ctx.fillStyle=nTop?NT:ST; ctx.fillText(t,ex,ey-H2/2);
+  ctx.fillStyle=nTop?ST:NT; ctx.fillText(b,ex,ey+H2/2);
+}
+
+function horseshoe(){
+  const path=()=>{
+    ctx.beginPath();
+    ctx.moveTo(px(-1.10),py(1.55)); ctx.lineTo(px(-0.25),py(1.55));
+    ctx.lineTo(px(-0.25),py(-0.85)); ctx.lineTo(px(0.25),py(-0.85));
+    ctx.lineTo(px(0.25),py(1.55)); ctx.lineTo(px(1.10),py(1.55));
+    ctx.lineTo(px(1.10),py(-1.25)); ctx.lineTo(px(-1.10),py(-1.25));
+    ctx.closePath();
+  };
+  path(); ctx.fillStyle='#b8b8b8'; ctx.fill();
+  ctx.fillStyle=NC; ctx.fillRect(px(-1.10),py(1.55),0.85*SC,2.40*SC);
+  ctx.fillStyle=SC_; ctx.fillRect(px(0.25),py(1.55),0.85*SC,2.40*SC);
+  path(); ctx.strokeStyle=BD; ctx.lineWidth=2.5; ctx.stroke();
+  ctx.font='bold 19px Barlow,sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle=NT; ctx.fillText('N',px(-0.675),py(0.35));
+  ctx.fillStyle=ST; ctx.fillText('S',px(0.675),py(0.35));
+}
+
+function rotatedMag(){
+  ctx.save();
+  ctx.translate(px(0),py(0)); ctx.rotate(-Math.PI/4);
+  const W2=2.15*SC,H2=0.50*SC;
+  ctx.fillStyle=NC; ctx.fillRect(-W2,-H2,W2,H2*2);
+  ctx.fillStyle=SC_; ctx.fillRect(0,-H2,W2,H2*2);
+  ctx.strokeStyle=BD; ctx.lineWidth=2.5;
+  ctx.strokeRect(-W2,-H2,W2*2,H2*2);
+  ctx.beginPath(); ctx.moveTo(0,-H2); ctx.lineTo(0,H2); ctx.stroke();
+  ctx.font='bold 20px Barlow,sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle=NT; ctx.fillText('N',-W2/2,0);
+  ctx.fillStyle=ST; ctx.fillText('S',W2/2,0);
+  ctx.restore();
+}
+
+// ── Pole sets ────────────────────────────────────────────
+const POLES=[
+  [{x:-1.8,y:0,q:11},{x:1.8,y:0,q:-11}],
+  [{x:0,y:1.25,q:11},{x:0,y:-1.25,q:-11}],
+  [{x:-0.28,y:1.00,q:11},{x:0.28,y:1.00,q:-11}],
+  [{x:-1.273,y:-1.273,q:11},{x:1.273,y:1.273,q:-11}],
+  [{x:-3.0,y:0,q:11},{x:-0.8,y:0,q:-11},{x:0.8,y:0,q:11},{x:3.0,y:0,q:-11}],
+  [{x:-3.0,y:0,q:11},{x:-0.8,y:0,q:-11},{x:0.8,y:0,q:-11},{x:3.0,y:0,q:11}],
+];
+
+const DRAW=[
+  ()=>horizMag(0,0,2.2,0.50,true),
+  ()=>vertMag(0,0,0.34,1.45,true),
+  ()=>horseshoe(),
+  ()=>rotatedMag(),
+  ()=>{horizMag(-1.9,0,1.2,0.55,true); horizMag(1.9,0,1.2,0.55,true);},
+  ()=>{horizMag(-1.9,0,1.2,0.55,true); horizMag(1.9,0,1.2,0.55,false);},
+];
+
+// ── Info content ─────────────────────────────────────────
+const INFO=[
+  { title:'1. Horizontal Bar Magnet',
+    desc:'Start sprinkling near the poles at each end, then work outward. Notice where filings stand up densely (strong field) vs. lie sparse (weak field).',
+    qs:['Sprinkle between the poles. How do the filings orient there?',
+        'Sprinkle far to the side at the magnet\'s midpoint. Which way do they point?',
+        'Where are filings most densely packed? What does that tell you?']},
+  { title:'2. Vertical Bar Magnet',
+    desc:'Same magnet, vertical orientation. Sprinkle around the top (N) and bottom (S) ends, then along the sides.',
+    qs:['Compare to Q1 — does the overall pattern feel the same or different?',
+        'Sprinkle directly beside the magnet\'s midpoint. Which way do filings orient?']},
+  { title:'3. Horseshoe Magnet',
+    desc:'The gap between the arms is the most interesting region. Sprinkle there first, then go outside and below the U-shape.',
+    qs:['How do filings in the gap between the poles orient?',
+        'Are filings in the gap more or less aligned than those outside? What does that tell you about field strength and direction?']},
+  { title:'4. Bar Magnet at 45°',
+    desc:'The same dipole field pattern, rotated. Notice how the filings near the poles orient along the magnet\'s diagonal axis.',
+    qs:['Sprinkle in a ring around the magnet. Describe how the filing orientations change as you go around it.',
+        'Is the pattern the same shape as Q1? What changed?']},
+  { title:'5. Two Bar Magnets — Attracting',
+    desc:'Both magnets have N on the left, S on the right — opposite poles face each other across the gap. Sprinkle the gap first, then the outside.',
+    qs:['How do the filings orient in the gap vs. the outside regions?',
+        'Is the gap field stronger (denser) than for a single magnet alone?']},
+  { title:'6. Two Bar Magnets — Repelling',
+    desc:'Like-poles face each other (S faces S). The gap field is very different from Q5. Sprinkle directly between the magnets.',
+    qs:['Do filings "connect" the two magnets through the gap, or do they bend away?',
+        'Compare the gap region to Q5. What is fundamentally different about the field here?']},
+];
+
+// ── Iron filings state ───────────────────────────────────
+// Each filing: {cx, cy, angle, len, alpha}   (cx,cy in CANVAS px)
+let filings = [];
+let cur = 0;
+
+const MAX_FILINGS = 4000;
+const FILING_CLR  = '#3d2f1e';  // dark iron brown
+
+function fieldAngle(canX, canY){
+  const physX = fx(canX), physY = fy(canY);
+  const [bx, by] = B(physX, physY, POLES[cur]);
+  const m = Math.sqrt(bx*bx+by*by);
+  if(m < 1e-8) return Math.random()*Math.PI;
+  // Canvas angle: atan2(-by, bx)  (y-axis inversion)
+  // Iron filings are 180°-symmetric, so normalise to [0, π)
+  let a = Math.atan2(-by, bx);
+  if(a < 0) a += Math.PI;
+  return a;
+}
+
+function sprinkle(canX, canY, n=14, scatter=26){
+  if(filings.length >= MAX_FILINGS){
+    filings.splice(0, n); // drop oldest to make room
+  }
+  for(let i=0; i<n; i++){
+    // Random scatter around click point
+    const r   = scatter * Math.sqrt(Math.random());
+    const th  = Math.random() * 2*Math.PI;
+    const sx  = canX + r*Math.cos(th);
+    const sy  = canY + r*Math.sin(th);
+    // Clamp to canvas
+    if(sx<2||sx>CW-2||sy<2||sy>CH-2) continue;
+
+    const baseAngle = fieldAngle(sx, sy);
+    filings.push({
+      cx:    sx,
+      cy:    sy,
+      angle: baseAngle + (Math.random()-0.5)*0.18, // ±~10° jitter
+      len:   5.5 + Math.random()*3.5,              // 5.5–9 px half-length
+      alpha: 0.62 + Math.random()*0.33,
+    });
+  }
+}
+
+// ── Drawing ──────────────────────────────────────────────
+function drawFilings(){
+  for(const f of filings){
+    const c  = Math.cos(f.angle);
+    const s  = Math.sin(f.angle);
+    ctx.save();
+    ctx.translate(f.cx, f.cy);
+    ctx.rotate(f.angle);
+    ctx.globalAlpha = f.alpha;
+    // Main body — thin rounded pill
+    ctx.fillStyle = FILING_CLR;
+    ctx.beginPath();
+    const hl = f.len, hw2 = 1.55;
+    ctx.moveTo(-hl+hw2, -hw2);
+    ctx.arcTo(-hl, -hw2, -hl, 0, hw2);
+    ctx.arcTo(-hl,  hw2, 0,   hw2, hw2);
+    ctx.lineTo( hl-hw2,  hw2);
+    ctx.arcTo( hl,  hw2, hl, 0, hw2);
+    ctx.arcTo( hl, -hw2, 0, -hw2, hw2);
+    ctx.closePath();
+    ctx.fill();
+    // Subtle highlight line
+    ctx.globalAlpha = f.alpha * 0.35;
+    ctx.strokeStyle = '#d4b89a';
+    ctx.lineWidth = 0.6;
+    ctx.beginPath();
+    ctx.moveTo(-hl*0.6, -0.5);
+    ctx.lineTo( hl*0.6, -0.5);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function render(){
+  // Warm paper background
+  ctx.fillStyle = '#f7f1e8';
+  ctx.fillRect(0,0,CW,CH);
+
+  // Subtle grid (very faint)
+  ctx.strokeStyle='rgba(180,150,110,0.15)'; ctx.lineWidth=0.8;
+  for(let x=0;x<CW;x+=SC){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,CH);ctx.stroke();}
+  for(let y=0;y<CH;y+=SC){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(CW,y);ctx.stroke();}
+
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0,0,CW,CH); ctx.clip();
+
+  // 1. filings (behind magnets)
+  drawFilings();
+
+  // 2. magnets on top
+  DRAW[cur]();
+
+  ctx.restore();
+
+  // Filing count
+  const fc = document.getElementById('fcount');
+  if(filings.length > 0){
+    fc.textContent = filings.length + ' filings';
+    fc.style.display = 'block';
+  } else {
+    fc.style.display = 'none';
+  }
+}
+
+// ── Interaction ──────────────────────────────────────────
+let dragging = false;
+let lastDragPos = null;
+
+function getPos(e){
+  const r = cv.getBoundingClientRect();
+  const scaleX = CW / r.width;
+  const scaleY = CH / r.height;
+  return [
+    (e.clientX - r.left) * scaleX,
+    (e.clientY - r.top)  * scaleY,
+  ];
+}
+
+cv.addEventListener('mousedown', e=>{
+  dragging = true;
+  const [x,y] = getPos(e);
+  lastDragPos = [x,y];
+  sprinkle(x, y, 16, 28);
+  render();
+  hideHint();
+});
+
+cv.addEventListener('mousemove', e=>{
+  if(!dragging) return;
+  const [x,y] = getPos(e);
+  const [lx,ly] = lastDragPos;
+  const d = Math.hypot(x-lx, y-ly);
+  if(d > 12){   // only deposit if moved enough
+    sprinkle(x, y, 7, 20);
+    render();
+    lastDragPos = [x,y];
+  }
+});
+
+cv.addEventListener('mouseup',   ()=>{ dragging=false; });
+cv.addEventListener('mouseleave',()=>{ dragging=false; });
+
+// Touch support
+cv.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  const t=e.touches[0];
+  const [x,y] = getPos(t);
+  lastDragPos=[x,y];
+  dragging=true;
+  sprinkle(x,y,16,28);
+  render();
+  hideHint();
+},{passive:false});
+
+cv.addEventListener('touchmove', e=>{
+  e.preventDefault();
+  if(!dragging) return;
+  const t=e.touches[0];
+  const [x,y] = getPos(t);
+  const [lx,ly] = lastDragPos;
+  if(Math.hypot(x-lx,y-ly)>12){
+    sprinkle(x,y,7,20);
+    render();
+    lastDragPos=[x,y];
+  }
+},{passive:false});
+
+cv.addEventListener('touchend', ()=>{ dragging=false; });
+
+// ── UI ────────────────────────────────────────────────────
+let hintVisible = true;
+function hideHint(){
+  if(!hintVisible) return;
+  hintVisible = false;
+  document.getElementById('hint').classList.add('hidden');
+}
+
+function clearFilings(){
+  filings = [];
+  hintVisible = true;
+  document.getElementById('hint').classList.remove('hidden');
+  render();
+}
+
+function go(i){
+  cur = i;
+  clearFilings();
+  document.querySelectorAll('.cfg-btn').forEach((b,j)=>b.classList.toggle('active',j===i));
+  document.getElementById('ititle').textContent = INFO[i].title;
+  document.getElementById('idesc').textContent  = INFO[i].desc;
+  document.getElementById('iqs').innerHTML = INFO[i].qs.map(q=>`<li>${q}</li>`).join('');
+  // hint reappears (clearFilings handles it)
+}
+
+// ── Init ─────────────────────────────────────────────────
+go(0);
+</script>
+</body>
+</html>
